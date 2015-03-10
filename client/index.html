@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>go test</title>
+		<link rel="stylesheet" type="text/css"href="/style.css"/>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
+		<script type="text/javascript">
+			$(function() {
+				var ws = new WebSocket('ws://localhost:8080/');
+				ws.onopen = function() { console.log('CONNECT'); };
+				ws.onclose = function() { console.log('DISCONNECT'); };
+				ws.onmessage = function(event) {
+					$('pre').hide();
+					var data = JSON.parse(event.data);
+
+					for (var x = 0; x < data.packages.length; x++) {
+						var pkg = data[x];
+						if (pkg.Successful) {
+							$('<pre><code id="'+pkg.PackageName+'" class="pass">'+pkg.Output+'</code></pre>').appendTo('body').hide().fadeIn();
+						} else {
+							$('<pre><code id="'+pkg.PackageName+'" class="fail">'+pkg.Output+'</code></pre>').appendTo('body').hide().fadeIn();
+						}
+					}
+				};
+			});
+		</script
+	</head>
+
+	<body></body>
+
+</html>

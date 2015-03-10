@@ -1,0 +1,5 @@
+http://clrs.cc/
+http://www.basscss.com/docs/getting-started/
+http://pesticide.io/
+https://css-tricks.com/full-browser-width-bars/
+http://www.colorpicker.com/

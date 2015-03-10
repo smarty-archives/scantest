@@ -1,0 +1,26 @@
+* {
+	padding: 0;
+	margin: 0;
+	/*border: 1px solid white;*/ /* for debugging */
+}
+
+html { background-color: #222; }
+
+body {
+	padding: 25px;
+	background-color: #222;
+}
+pre {
+	margin: 50px;
+	padding: 35px;
+	background-color: #111;
+	border-radius: 10px;
+}
+code {
+	font-family: 'Source Code Pro', 'Monaco', 'Consolas', monospace;
+	font-size: 12px;
+	word-wrap: break-word;
+	line-height: 2em;
+}
+.pass { color: #2ECC40; }
+.fail { color: #FF4136; }
