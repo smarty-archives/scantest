@@ -12,12 +12,22 @@
 				ws.onmessage = function(event) {
 					$('pre').hide();
 					var data = JSON.parse(event.data);
+					console.log("DATA:", data);
 
 					for (var x = 0; x < data.packages.length; x++) {
-						var pkg = data[x];
-						if (pkg.Successful) {
+						var pkg = data.packages[x];
+
+						if (pkg.Status == 2) { // success:
 							$('<pre><code id="'+pkg.PackageName+'" class="pass">'+pkg.Output+'</code></pre>').appendTo('body').hide().fadeIn();
-						} else {
+						} else if (pkg.Status == 1) { // failed tests:
+							var failures = '<pre><code class="fail">FAILURES: '+pkg.PackageName+'\n\n'+'</code>';
+							for (var y = 0; y < pkg.Failures.length; y++) {
+								failures += '<code class="fail">'+pkg.Failures[y]+'</code>';
+							}
+							failures += '</pre>';
+							$(failures).appendTo('body').hide().fadeIn();
+						}
+						if (pkg.Status <= 1) { // failed tests and broken packages:
 							$('<pre><code id="'+pkg.PackageName+'" class="fail">'+pkg.Output+'</code></pre>').appendTo('body').hide().fadeIn();
 						}
 					}

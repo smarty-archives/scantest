@@ -14,15 +14,20 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 	"time"
 )
 
-/////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 // TODO: build failures need to stand apart from failed tests
 // TODO: accept commands from stdin (pause, re-run, run all?)
 
-/////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 func main() {
 	var pretty bool
@@ -73,12 +78,13 @@ func main() {
 		}
 	)
 
-	go scanner.ScanForever()
 	go checksummer.ListenForever()
 	go packager.ListenForever()
 	go selector.ListenForever()
 	go runner.ListenForever()
-	printer.ListenForever()
+	go printer.ListenForever()
+
+	scanner.ScanForever()
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -94,6 +100,8 @@ type File struct {
 	IsModified   bool
 }
 
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
 type FileSystemScanner struct {
@@ -128,7 +136,9 @@ func (self *FileSystemScanner) ScanForever() {
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type Checksummer struct {
 	in  chan chan *File
@@ -173,7 +183,9 @@ func (self *Checksummer) ListenForever() {
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type Package struct {
 	Info           *build.Package
@@ -182,7 +194,9 @@ type Package struct {
 	// arguments string
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type Packager struct {
 	in  chan chan *File
@@ -221,14 +235,18 @@ func (self *Packager) ListenForever() {
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type Execution struct {
 	PackageName string
 	// ParsedArguments []string
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type PackageSelector struct {
 	in  chan chan *Package
@@ -277,26 +295,42 @@ func (self *PackageSelector) ListenForever() {
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type Result struct {
 	PackageName string
-	Successful  bool
+	Status      PackageStatus
 	Output      string
-	// TODO: Failures []string // requires extra parsing of results...
+	Failures    []string
 }
 
-// ResultSet implements sort.Interface for []Person based on
-// the Age field.
+type PackageStatus int
+
+const (
+	CompileFailed PackageStatus = iota
+	TestsFailed
+	TestsPassed
+)
+
+//////////////////////////////////////////////////////////////////////////////////////
+
+// ResultSet implements sort.Interface for []Person based on the result status and package name.
 type ResultSet []Result
 
 func (self ResultSet) Len() int      { return len(self) }
 func (self ResultSet) Swap(i, j int) { self[i], self[j] = self[j], self[i] }
 func (self ResultSet) Less(i, j int) bool {
-	return !self[i].Successful || self[i].PackageName[0] < self[j].PackageName[0]
+	if self[i].Status == self[j].Status {
+		return self[i].PackageName[0] < self[j].PackageName[0]
+	}
+	return self[i].Status < self[j].Status
 }
 
-/////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type Runner struct {
 	in  chan map[string]bool
@@ -309,18 +343,72 @@ func (self *Runner) ListenForever() {
 		for packageName, _ := range <-self.in {
 			command := exec.Command("go", "test", "-v", "-short", packageName) // TODO: profiles
 			output, err := command.CombinedOutput()
-
-			results = append(results, Result{
+			result := Result{
 				PackageName: packageName,
-				Successful:  err == nil,
 				Output:      string(output),
-			})
+			}
+
+			// http://stackoverflow.com/questions/10385551/get-exit-code-go
+			if err == nil { // if exit code is 0: the tests executed and passed.
+				fmt.Println("Passed:", packageName)
+				result.Status = TestsPassed
+			} else if exit, ok := err.(*exec.ExitError); ok {
+				if status, ok := exit.Sys().(syscall.WaitStatus); ok {
+
+					if status.ExitStatus() == 1 { // if exit code is 1: we tests failed or panicked.
+						fmt.Println("Failed:", packageName)
+						result.Status = TestsFailed
+						result.Failures = parseFailures(result)
+					} else if status.ExitStatus() > 1 { // if exit code is > 1: we failed to build and tests were not run.
+						fmt.Println("Compiler error:", packageName)
+						result.Status = CompileFailed
+					}
+				} else {
+					fmt.Println("What? no syscall.WaitStatus?")
+				}
+			} else {
+				fmt.Println("What? no exec.ExitError?")
+			}
+
+			results = append(results, result)
 		}
 		self.out <- results
 	}
 }
 
-/////////////////////////////////////////////////////////////////////////////
+func parseFailures(result Result) []string {
+	failures := []string{}
+	if result.Status != TestsFailed {
+		return failures
+	}
+	buffer := new(bytes.Buffer)
+	reader := strings.NewReader(result.Output)
+	scanner := bufio.NewScanner(reader)
+	var passed bool
+
+	for scanner.Scan() {
+		line := scanner.Text() + "\n"
+		if strings.HasPrefix(line, "=== RUN Test") {
+			if buffer.Len() > 0 && passed == false {
+				failures = append(failures, buffer.String())
+			}
+			buffer = bytes.NewBufferString("")
+			buffer.WriteString(line)
+		} else if strings.HasPrefix(line, "--- PASS: Test") {
+			passed = true
+		} else if strings.HasPrefix(line, "--- FAIL: Test") {
+			buffer.WriteString(line)
+			passed = false
+		} else {
+			buffer.WriteString(line)
+		}
+	}
+	return failures
+}
+
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
 
 type Printer struct {
 	pretty bool
@@ -349,7 +437,7 @@ func (self *Printer) console(resultSet []Result) {
 
 	for x := len(resultSet) - 1; x >= 0; x-- {
 		result := resultSet[x]
-		if !result.Successful {
+		if result.Status < TestsPassed {
 			failed = true
 			fmt.Fprint(os.Stdout, red)
 		}
@@ -370,44 +458,19 @@ func (self *Printer) console(resultSet []Result) {
 
 type JSONResult struct {
 	Packages []Result `json:"packages"`
-	Failures []string `json:"failures"`
 }
 
 func (self *Printer) json(resultSet []Result) {
 	result := JSONResult{Packages: resultSet}
-	for _, each := range resultSet {
-		result.Failures = append(result.Failures, self.parseFailures(each)...)
-	}
 	raw, err := json.Marshal(result)
 	if err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		os.Exit(1) // TODO: maybe send a web socket message that indicates the UI of the crash...
 	} else {
 		fmt.Println(string(raw))
 	}
 }
 
-func (self *Printer) parseFailures(result Result) []string {
-	failures := []string{}
-	if result.Successful {
-		return failures
-	}
-	buffer := new(bytes.Buffer)
-	reader := strings.NewReader(result.Output)
-	scanner := bufio.NewScanner(reader)
-	inTest := false
-	for scanner.Scan() {
-		line := scanner.Text() + "\n"
-		if strings.HasPrefix(line, "=== RUN Test") {
-			buffer = bytes.NewBufferString(line)
-			inTest = true
-		} else if inTest && strings.HasPrefix(line, "--- FAIL: Test") {
-			buffer.WriteString(line)
-			failures = append(failures, buffer.String())
-			inTest = false
-		} else if inTest {
-			buffer.WriteString(line)
-		}
-	}
-	return failures
-}
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////
