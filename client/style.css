@@ -4,7 +4,10 @@
 	/*border: 1px solid white;*/ /* for debugging */
 }
 
-html { background-color: #222; }
+html { 
+	background-color: #222; 
+	font-family: 'Source Code Pro', 'Monaco', 'Consolas', 'Menlo', monospace;
+}
 
 body {
 	padding: 25px;
@@ -17,10 +20,29 @@ pre {
 	border-radius: 10px;
 }
 code {
-	font-family: 'Source Code Pro', 'Monaco', 'Consolas', monospace;
+	font-family: 'Source Code Pro', 'Monaco', 'Consolas', 'Menlo', monospace;
 	font-size: 12px;
 	word-wrap: break-word;
 	line-height: 2em;
 }
 .pass { color: #2ECC40; }
 .fail { color: #FF4136; }
+
+center {
+	position: fixed;
+	top: 30px;
+	left: 45%;
+}
+center span {
+	color: #DDDDDD;
+	letter-spacing: 2px;
+	border-radius: 5px;
+	border: 5px solid #222;
+	padding: 10px;
+	background-color: #111;
+	cursor: pointer;
+}
+center span:hover {
+	background-color: #000;
+	text-decoration: underline;
+}

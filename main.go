@@ -22,12 +22,6 @@ import (
 //////////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////////
 
-// TODO: accept commands from stdin (pause, re-run, run all?)
-
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-//////////////////////////////////////////////////////////////////////////////////////
-
 func main() {
 	var pretty bool
 	flag.BoolVar(&pretty, "pretty", false, "Set to true if you want pretty, multi-line output, or false if you want JSON (like for a browser).")
@@ -40,11 +34,12 @@ func main() {
 	}
 
 	var (
-		scannedFiles = make(chan chan *File)
-		checkedFiles = make(chan chan *File)
-		packages     = make(chan chan *Package)
-		executions   = make(chan map[string]bool)
-		results      = make(chan []Result)
+		inputCommands = make(chan struct{})
+		scannedFiles  = make(chan chan *File)
+		checkedFiles  = make(chan chan *File)
+		packages      = make(chan chan *Package)
+		executions    = make(chan map[string]bool)
+		results       = make(chan []Result)
 
 		scanner = &FileSystemScanner{
 			root: workingDirectory,
@@ -52,6 +47,8 @@ func main() {
 		}
 
 		checksummer = &Checksummer{
+			commands: inputCommands,
+
 			in:  scannedFiles,
 			out: checkedFiles,
 		}
@@ -77,13 +74,26 @@ func main() {
 		}
 	)
 
+	go scanner.ScanForever()
+	go checksummer.RespondForevor()
 	go checksummer.ListenForever()
 	go packager.ListenForever()
 	go selector.ListenForever()
 	go runner.ListenForever()
 	go printer.ListenForever()
+	receiveInput(inputCommands)
+}
 
-	scanner.ScanForever()
+//////////////////////////////////////////////////////////////////////////////////////
+
+func receiveInput(signal chan struct{}) {
+	for {
+		a := []byte{0}
+		os.Stdin.Read(a)
+		if a[0] == 10 { // Enter key
+			signal <- struct{}{}
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -140,6 +150,9 @@ func (self *FileSystemScanner) ScanForever() {
 //////////////////////////////////////////////////////////////////////////////////////
 
 type Checksummer struct {
+	commands chan struct{}
+	reset    bool
+
 	in  chan chan *File
 	out chan chan *File
 
@@ -147,8 +160,15 @@ type Checksummer struct {
 	goFiles map[string]int64
 }
 
+func (self *Checksummer) RespondForevor() {
+	for {
+		<-self.commands
+		self.reset = true
+		time.Sleep(time.Millisecond)
+	}
+}
+
 func (self *Checksummer) ListenForever() {
-	self.state = -1
 	self.goFiles = map[string]int64{}
 
 	for {
@@ -163,6 +183,8 @@ func (self *Checksummer) ListenForever() {
 				state += fileChecksum
 				if checksum, found := self.goFiles[file.Path]; !found || checksum != fileChecksum {
 					file.IsModified = true
+				} else if self.reset { // the user has requested a re-run of all packages, so fake a modification.
+					file.IsModified = true
 				}
 				goFiles[file.Path] = fileChecksum
 				outgoing = append(outgoing, file)
@@ -170,7 +192,8 @@ func (self *Checksummer) ListenForever() {
 		}
 		self.goFiles = goFiles
 
-		if state != self.state {
+		if state != self.state || self.reset {
+			fmt.Println("Running tests...")
 			self.state = state
 			out := make(chan *File)
 			self.out <- out
@@ -178,6 +201,10 @@ func (self *Checksummer) ListenForever() {
 				out <- file
 			}
 			close(out)
+
+			if self.reset {
+				self.reset = false
+			}
 		}
 	}
 }
@@ -349,24 +376,17 @@ func (self *Runner) ListenForever() {
 
 			// http://stackoverflow.com/questions/10385551/get-exit-code-go
 			if err == nil { // if exit code is 0: the tests executed and passed.
-				fmt.Println("Passed:", packageName)
 				result.Status = TestsPassed
 			} else if exit, ok := err.(*exec.ExitError); ok {
 				if status, ok := exit.Sys().(syscall.WaitStatus); ok {
 
 					if status.ExitStatus() == 1 { // if exit code is 1: we tests failed or panicked.
-						fmt.Println("Failed:", packageName)
 						result.Status = TestsFailed
 						result.Failures = parseFailures(result)
 					} else if status.ExitStatus() > 1 { // if exit code is > 1: we failed to build and tests were not run.
-						fmt.Println("Compiler error:", packageName)
 						result.Status = CompileFailed
 					}
-				} else {
-					fmt.Println("What? no syscall.WaitStatus?")
 				}
-			} else {
-				fmt.Println("What? no exec.ExitError?")
 			}
 
 			results = append(results, result)
