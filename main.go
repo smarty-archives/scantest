@@ -16,6 +16,8 @@ import (
 	"strings"
 	"syscall"
 	"time"
+
+	"github.com/smartystreets/gunit/gunit/generate"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -126,6 +128,9 @@ func (self *FileSystemScanner) ScanForever() {
 		filepath.Walk(self.root, func(path string, info os.FileInfo, err error) error { // TODO: handle err of filepath.Walk?
 			if info.IsDir() && (info.Name() == ".git" || info.Name() == ".hg" /* etc... */) {
 				return filepath.SkipDir
+			}
+			if info.Name() == generate.GeneratedFilename {
+				return nil
 			}
 
 			batch <- &File{
@@ -367,7 +372,9 @@ func (self *Runner) ListenForever() {
 	for {
 		results := []Result{}
 		for packageName, _ := range <-self.in {
-			command := exec.Command("go", "test", "-v", "-short", packageName) // TODO: profiles
+			prep := exec.Command("gunit", "-package="+packageName)
+			prep.Run()
+			command := exec.Command("go", "test", "-v", packageName) // TODO: profiles
 			output, err := command.CombinedOutput()
 			result := Result{
 				PackageName: packageName,

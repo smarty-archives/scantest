@@ -1,3 +1,0 @@
-package main
-
-blah blah
