@@ -9,7 +9,7 @@ go get github.com/smartystreets/scantest
 
 ```
 cd my-project
-scantest
+scantest -console
 ```
 
 # Execution (Web UI)
