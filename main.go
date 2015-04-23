@@ -458,6 +458,8 @@ func (self *Printer) console(resultSet []Result) {
 		green = "\033[32m"
 		reset = "\033[0m"
 	)
+	writer := bufio.NewWriter(os.Stdout)
+	defer writer.Flush()
 
 	failed := false
 
@@ -465,21 +467,21 @@ func (self *Printer) console(resultSet []Result) {
 		result := resultSet[x]
 		if result.Status < TestsPassed {
 			failed = true
-			fmt.Fprint(os.Stdout, red)
+			fmt.Fprint(writer, red)
 		}
-		fmt.Println(result.PackageName)
-		fmt.Println(result.Output)
-		fmt.Println(reset)
-		fmt.Println()
+		fmt.Fprintln(writer, result.PackageName)
+		fmt.Fprintln(writer, result.Output)
+		fmt.Fprintln(writer, reset)
+		fmt.Fprintln(writer)
 	}
 
 	if failed {
-		fmt.Fprint(os.Stdout, red)
+		fmt.Fprint(writer, red)
 	} else {
-		fmt.Fprint(os.Stdout, green)
+		fmt.Fprint(writer, green)
 	}
-	fmt.Println("-----------------------------------------------------")
-	fmt.Println(reset)
+	fmt.Fprintln(writer, "-----------------------------------------------------")
+	fmt.Fprintln(writer, reset)
 }
 
 type JSONResult struct {
