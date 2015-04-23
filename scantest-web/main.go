@@ -27,7 +27,7 @@ func NewProgram() *Program {
 	static := filepath.Join(filepath.Dir(file), "../client")
 	return &Program{
 		command: exec.Command(
-			"websocketd", "-port=8888", "-passenv=GOPATH,PATH", "--staticdir="+static, "scantest"),
+			"websocketd", "-port=8888", "-passenv=GOPATH,PATH", "--staticdir="+static, "scantest", "-web"),
 	}
 }
 
