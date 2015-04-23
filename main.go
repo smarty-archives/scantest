@@ -1,5 +1,5 @@
 // go build && websocketd -port=8080 -passenv=PATH,GOPATH --staticdir=client ./scantest
-// go install github.com/mdwhatcott/scantest && websocketd -port=8080 -passenv=PATH,GOPATH --staticdir=$GOPATH/src/github.com/mdwhatcott/scantest/client scantest
+// go install github.com/smartystreets/scantest && websocketd -port=8080 -passenv=PATH,GOPATH --staticdir=$GOPATH/src/github.com/smartystreets/scantest/client scantest
 package main
 
 import (
