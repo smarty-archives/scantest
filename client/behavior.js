@@ -33,9 +33,9 @@ $(function() {
 		for (var x = 0; x < data.packages.length; x++) {
 			var pkg = data.packages[x];
 
-			if (pkg.Status == 2) { // success:
+			if (pkg.Status == 3) { // success:
 				$('<pre><code id="'+pkg.PackageName+'" class="pass">'+pkg.Output+'</code></pre>').appendTo('body').hide().fadeIn();
-			} else if (pkg.Status == 1) { // failed tests:
+			} else if (pkg.Status == 2) { // failed tests:
 				passed = false;
 				var failures = '<pre><code class="fail">FAILURES: '+pkg.PackageName+'\n\n'+'</code>';
 				for (var y = 0; y < pkg.Failures.length; y++) {
@@ -44,7 +44,7 @@ $(function() {
 				failures += '</pre>';
 				$(failures).appendTo('body').hide().fadeIn();
 			}
-			if (pkg.Status <= 1) { // failed tests and broken packages:
+			if (pkg.Status <= 2) { // failed tests and broken packages:
 				passed = false;
 				$('<pre><code id="'+pkg.PackageName+'" class="fail">'+pkg.Output+'</code></pre>').appendTo('body').hide().fadeIn();
 			}

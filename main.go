@@ -338,7 +338,8 @@ type Result struct {
 type PackageStatus int
 
 const (
-	CompileFailed PackageStatus = iota
+	GenerateFailed PackageStatus = iota
+	CompileFailed
 	TestsFailed
 	TestsPassed
 )
@@ -370,14 +371,19 @@ func (self *Runner) ListenForever() {
 	for {
 		results := []Result{}
 		for packageName, _ := range <-self.in {
-			prep := exec.Command("go", "generate", packageName)
-			prep.Run()
-			command := exec.Command("go", "test", "-v", packageName) // TODO: profiles
-			output, err := command.CombinedOutput()
-			result := Result{
-				PackageName: packageName,
-				Output:      string(output),
+			result := Result{PackageName: packageName}
+			generate := exec.Command("go", "generate", packageName)
+			output, err := generate.CombinedOutput()
+			if err != nil {
+				result.Status = GenerateFailed
+				result.Output = string(output)
+				results = append(results, result)
+				continue
 			}
+
+			command := exec.Command("go", "test", "-v", packageName) // TODO: profiles
+			output, err = command.CombinedOutput()
+			result.Output = string(output)
 
 			// http://stackoverflow.com/questions/10385551/get-exit-code-go
 			if err == nil { // if exit code is 0: the tests executed and passed.
