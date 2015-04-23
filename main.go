@@ -1,5 +1,3 @@
-// go build && websocketd -port=8080 -passenv=PATH,GOPATH --staticdir=client ./scantest
-// go install github.com/smartystreets/scantest && websocketd -port=8080 -passenv=PATH,GOPATH --staticdir=$GOPATH/src/github.com/smartystreets/scantest/client scantest
 package main
 
 import (
@@ -25,8 +23,8 @@ import (
 //////////////////////////////////////////////////////////////////////////////////////
 
 func main() {
-	var pretty bool
-	flag.BoolVar(&pretty, "console", false, "Set to true if you want console output, or false if you want JSON output for a browser).")
+	var web bool
+	flag.BoolVar(&web, "web", false, "Set to true by the scantest-web command (for sending JSON results to a browser via websocketd).")
 	flag.Parse()
 
 	workingDirectory, err := os.Getwd()
@@ -71,8 +69,8 @@ func main() {
 		}
 
 		printer = &Printer{
-			in:     results,
-			pretty: pretty,
+			in:  results,
+			web: web,
 		}
 	)
 
@@ -439,17 +437,17 @@ func parseFailures(result Result) []string {
 //////////////////////////////////////////////////////////////////////////////////////
 
 type Printer struct {
-	pretty bool
-	in     chan []Result
+	web bool
+	in  chan []Result
 }
 
 func (self *Printer) ListenForever() {
 	for resultSet := range self.in {
 		sort.Sort(ResultSet(resultSet))
-		if self.pretty {
-			self.console(resultSet)
-		} else {
+		if self.web {
 			self.json(resultSet)
+		} else {
+			self.console(resultSet)
 		}
 	}
 }
