@@ -415,11 +415,13 @@ func parseFailures(result Result) []string {
 	for scanner.Scan() {
 		line := scanner.Text() + "\n"
 		if strings.HasPrefix(line, "=== RUN Test") {
-			if buffer.Len() > 0 && passed == false {
+			if buffer.Len() > 0 && !passed {
 				failures = append(failures, buffer.String())
 			}
-			buffer = bytes.NewBufferString("")
+			buffer = new(bytes.Buffer)
 			buffer.WriteString(line)
+		} else if strings.HasPrefix(line, "FAIL") { // the package report at the end
+			failures = append(failures, buffer.String())
 		} else if strings.HasPrefix(line, "--- PASS: Test") {
 			passed = true
 		} else if strings.HasPrefix(line, "--- FAIL: Test") {
