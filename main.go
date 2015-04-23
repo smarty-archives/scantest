@@ -26,7 +26,7 @@ import (
 
 func main() {
 	var pretty bool
-	flag.BoolVar(&pretty, "pretty", false, "Set to true if you want pretty, multi-line output, or false if you want JSON (like for a browser).")
+	flag.BoolVar(&pretty, "console", false, "Set to true if you want console output, or false if you want JSON output for a browser).")
 	flag.Parse()
 
 	workingDirectory, err := os.Getwd()
