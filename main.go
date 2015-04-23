@@ -372,7 +372,7 @@ func (self *Runner) ListenForever() {
 	for {
 		results := []Result{}
 		for packageName, _ := range <-self.in {
-			prep := exec.Command("gunit", "-package="+packageName)
+			prep := exec.Command("go", "generate", packageName)
 			prep.Run()
 			command := exec.Command("go", "test", "-v", packageName) // TODO: profiles
 			output, err := command.CombinedOutput()
