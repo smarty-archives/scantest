@@ -29,7 +29,7 @@ func main() {
 
 	workingDirectory, err := os.Getwd()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 
@@ -498,7 +498,7 @@ func (self *Printer) json(resultSet []Result) {
 	result := JSONResult{Packages: resultSet}
 	raw, err := json.Marshal(result)
 	if err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1) // TODO: maybe send a web socket message that indicates the UI of the crash...
 	} else {
 		fmt.Println(string(raw))
