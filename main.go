@@ -244,6 +244,7 @@ func (self *Packager) ListenForever() {
 				var err error
 				pkg.Info, err = build.ImportDir(file.ParentFolder, build.AllowBinary)
 				if err != nil {
+					// TODO: Need to handle this. It happens when a .go file is blank (and doesn't have a package declaration)...
 					continue
 				}
 				packages[file.ParentFolder] = pkg
@@ -374,9 +375,9 @@ func (self *Runner) ListenForever() {
 			result := Result{PackageName: packageName}
 			generate := exec.Command("go", "generate", packageName)
 			output, err := generate.CombinedOutput()
-			if err != nil {
+			if !generate.ProcessState.Success() {
 				result.Status = GenerateFailed
-				result.Output = string(output)
+				result.Output = string(output) + "\n" + err.Error()
 				results = append(results, result)
 				continue
 			}
