@@ -373,12 +373,26 @@ func (self *Runner) ListenForever() {
 		results := []Result{}
 		for packageName, _ := range <-self.in {
 			result := Result{PackageName: packageName}
-			generate := exec.Command("go", "generate", packageName)
+			generate := exec.Command("go", "generate", "-x", packageName)
 			output, err := generate.CombinedOutput()
 			if !generate.ProcessState.Success() {
 				result.Status = GenerateFailed
 				result.Output = string(output) + "\n" + err.Error()
 				results = append(results, result)
+				continue
+			}
+
+			var missingDirective bool
+			pkg, err := build.Default.Import(packageName, "", build.AllowBinary)
+			for _, i := range pkg.TestImports {
+				if i == "github.com/smartystreets/gunit" && !strings.Contains(string(output), "gunit") {
+					result.Status = GenerateFailed
+					result.Output = packageName + " imports gunit but is missing a go generate directive to invoke the gunit command (`//go:generate gunit`)..."
+					results = append(results, result)
+					missingDirective = true
+				}
+			}
+			if missingDirective {
 				continue
 			}
 
