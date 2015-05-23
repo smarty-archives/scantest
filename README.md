@@ -26,7 +26,7 @@ Results of your tests will display in the terminal until you enter `<ctrl>+c`.
 ```
 go get github.com/joewalnes/websocketd
 go get github.com/smartystreets/scantest
-go get github.com/smartystreets/scanatest/scantest-web
+go get github.com/smartystreets/scantest/scantest-web
 cd my-project
 scantest-web
 ```
