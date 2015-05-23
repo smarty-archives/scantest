@@ -4,7 +4,7 @@ A simple, repsonsive (a word which here means 'snappy') test runner. Like GoConv
 
 ## Features
 
-- RUns `go test` for all packages under the current working directory.
+- Runs `go test` for all packages under the current working directory.
 - Scans for changes to .go files under the current directory.
 - Runs tests for packages with changed .go files
 - Runs tests for packages that depend on the modified package, if the change was not just in a _test.go file.
@@ -26,7 +26,7 @@ Results of your tests will display in the terminal until you enter `<ctrl>+c`.
 ```
 go get github.com/joewalnes/websocketd
 go get github.com/smartystreets/scantest
-go get github.com/smartystreets/scantest-web
+go get github.com/smartystreets/scanatest/scantest-web
 cd my-project
 scantest-web
 ```
