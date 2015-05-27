@@ -36,7 +36,10 @@ func (self *Program) Prepare() {
 	self.ConnectToStdout()
 }
 func (self *Program) Run() {
-	self.command.Start()
+	err := self.command.Start()
+	if err != nil {
+		log.Fatal(err)
+	}
 	go self.PrintForevor()
 	self.command.Wait()
 }
