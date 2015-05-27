@@ -11,22 +11,25 @@ A simple, repsonsive (a word which here means 'snappy') test runner. Like GoConv
 - Provides conventional output for console-based use or JSON for use with the command at github.com/smartystreets/scantest/scantest-web.
 - Provides colorful output according to exit status of tests in both console and web mode (green=passed, red=failed).
 
-### Installation and Execution (Console Runner only)
+### Installation
 
 ```
-go get github.com/smartystreets/scantest
+go get github.com/joewalnes/websocketd
+go get github.com/smartystreets/scantest/...
+```
+
+### Console Runner Execution
+
+```
 cd my-project
 scantest
 ```
 
 Results of your tests will display in the terminal until you enter `<ctrl>+c`.
 
-### Installation and Execution (Web Runner and/or Console Runner)
+### Web Runner Execution
 
 ```
-go get github.com/joewalnes/websocketd
-go get github.com/smartystreets/scantest
-go get github.com/smartystreets/scantest/scantest-web
 cd my-project
 scantest-web
 ```
