@@ -16,8 +16,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/flynn/go-shlex"
 	"github.com/smartystreets/gunit/gunit/generate"
+	"github.com/smartystreets/scantest/go-shlex"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////
