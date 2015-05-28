@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"go/build"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/flynn/go-shlex"
 	"github.com/smartystreets/gunit/gunit/generate"
 )
 
@@ -396,7 +398,18 @@ func (self *Runner) ListenForever() {
 				continue
 			}
 
-			command := exec.Command("go", "test", "-v", packageName) // TODO: profiles
+			argBytes, _ := ioutil.ReadFile(filepath.Join(pkg.Dir, ".gotestargs"))
+			rawArgs := strings.TrimSpace(string(argBytes))
+			args := []string{"test"}
+			additionalArgs, _ := shlex.Split(rawArgs)
+			if len(additionalArgs) > 0 {
+				args = append(args, additionalArgs...)
+			} else if len(argBytes) == 0 {
+				args = append(args, "-v") // default to verbose mode if no profile arguments are provided.
+			}
+			args = append(args, packageName)
+
+			command := exec.Command("go", args...)
 			output, err = command.CombinedOutput()
 			result.Output = string(output)
 
