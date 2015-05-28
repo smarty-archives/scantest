@@ -35,3 +35,13 @@ scantest-web
 ```
 
 Then open your web browser to [`http://localhost:8888`](http://localhost:8888) to see your tests run. Save a change to a .go file somewhere under the current directory and see the tests for that package and any packages that depend on the modified package execute. Kill `scantest-web` by hitting `<ctrl>+c`.
+
+## Custom Go Test Arguments
+
+By default, `go test` is invoked with the `-v` flag and that's it. But sometimes you need control over how `go test` is invoked. Just plunk down a `.gotestargs` file in a package and when `go test` is run, the arguments listed there (on the first line) will be fed to `go test`.
+
+Example contents:
+
+```
+-v -cover -parallel=5 -run=TestAllTheThings
+```
