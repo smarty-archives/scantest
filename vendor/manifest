@@ -1,0 +1,12 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/flynn/go-shlex",
+			"repository": "https://github.com/flynn/go-shlex",
+			"revision": "3f9db97f856818214da2e1057f8ad84803971cff",
+			"branch": "master",
+			"path": ""
+		}
+	]
+}

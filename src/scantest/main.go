@@ -16,8 +16,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/smartystreets/gunit/gunit/generate"
-	"github.com/smartystreets/scantest/go-shlex"
+	"github.com/flynn/go-shlex"
 )
 
 //////////////////////////////////////////////////////////////////////////////////////
@@ -129,7 +128,7 @@ func (self *FileSystemScanner) ScanForever() {
 			if info.IsDir() && (info.Name() == ".git" || info.Name() == ".hg" /* etc... */) {
 				return filepath.SkipDir
 			}
-			if info.Name() == generate.GeneratedFilename {
+			if info.Name() == "generated_by_gunit_test.go" {
 				return nil
 			}
 
