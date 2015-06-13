@@ -4,11 +4,9 @@ import "errors"
 
 type Context struct {
 	Files         []*File
-	Checksum      int64
 	ModifiedFiles []File
 	Packages      []Package
-
-	Error error
+	Error         error
 }
 
 var ContextComplete = errors.New("Context complete")
