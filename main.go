@@ -75,8 +75,9 @@ func (this *Scanner) checksum() int64 {
 ////////////////////////////////////////////////////////////////////////////
 
 type Runner struct {
-	command []string
-	working string
+	command  []string
+	working  string
+	finished bool
 }
 
 func (this *Runner) Run() {
@@ -88,6 +89,7 @@ func (this *Runner) Run() {
 	os.Stdout.Write(problem)
 	fmt.Fprintln(os.Stdout)
 	os.Stdout.Write(output)
+	fmt.Fprintln(os.Stdout, strings.Repeat("-", len(message)))
 }
 
 func (this *Runner) run() (output []byte, errBytes []byte) {
@@ -97,12 +99,52 @@ func (this *Runner) run() (output []byte, errBytes []byte) {
 	}
 	command.Dir = this.working
 
+	this.finished = false
+	go this.spin()
+
 	var err error
 	output, err = command.CombinedOutput()
+	this.finished = true
 	if err != nil {
 		errBytes = []byte(err.Error())
 	}
 	return output, errBytes
+}
+
+func (this *Runner) spin() {
+	now := time.Now()
+	time.Sleep(time.Millisecond * 500)
+	for !this.finished {
+		fmt.Println(Round(time.Since(now), time.Millisecond))
+		time.Sleep(time.Millisecond * 500)
+	}
+}
+
+// GoLang-Nuts thread:
+//     https://groups.google.com/d/msg/golang-nuts/OWHmTBu16nA/RQb4TvXUg1EJ
+// Wise, a word which here means unhelpful, guidance from Commander Pike:
+//     https://groups.google.com/d/msg/golang-nuts/OWHmTBu16nA/zoGNwDVKIqAJ
+// Answer satisfying the original asker:
+//     https://groups.google.com/d/msg/golang-nuts/OWHmTBu16nA/wnrz0tNXzngJ
+// Answer implementation on the Go Playground:
+//     http://play.golang.org/p/QHocTHl8iR
+func Round(d, r time.Duration) time.Duration {
+	if r <= 0 {
+		return d
+	}
+	neg := d < 0
+	if neg {
+		d = -d
+	}
+	if m := d % r; m+m < r {
+		d = d - m
+	} else {
+		d = d + r - m
+	}
+	if neg {
+		return -d
+	}
+	return d
 }
 
 ////////////////////////////////////////////////////////////////////////////
