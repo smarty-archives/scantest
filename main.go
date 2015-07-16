@@ -85,14 +85,19 @@ func (this *Runner) Run() {
 	fmt.Fprintln(os.Stdout, "\n"+strings.Repeat("=", len(message)))
 	fmt.Fprint(os.Stdout, message)
 	fmt.Fprintln(os.Stdout, strings.Repeat("=", len(message)))
-	output, problem := this.run()
-	os.Stdout.Write(problem)
+	output, success := this.run()
+	if success {
+		fmt.Fprintf(os.Stdout, greenColor)
+	} else {
+		fmt.Fprintf(os.Stdout, redColor)
+	}
 	fmt.Fprintln(os.Stdout)
 	os.Stdout.Write(output)
 	fmt.Fprintln(os.Stdout, strings.Repeat("-", len(message)))
+	fmt.Fprintf(os.Stdout, resetColor)
 }
 
-func (this *Runner) run() (output []byte, errBytes []byte) {
+func (this *Runner) run() (output []byte, success bool) {
 	command := exec.Command(this.command[0])
 	if len(this.command) > 1 {
 		command.Args = this.command[1:]
@@ -106,9 +111,9 @@ func (this *Runner) run() (output []byte, errBytes []byte) {
 	output, err = command.CombinedOutput()
 	this.finished = true
 	if err != nil {
-		errBytes = []byte(err.Error())
+		output = append(output, []byte(err.Error())...)
 	}
-	return output, errBytes
+	return output, command.ProcessState.Success()
 }
 
 func (this *Runner) spin() {
@@ -148,3 +153,9 @@ func Round(d, r time.Duration) time.Duration {
 }
 
 ////////////////////////////////////////////////////////////////////////////
+
+var (
+	greenColor = "\033[32m"
+	redColor   = "\033[31m"
+	resetColor = "\033[0m"
+)
