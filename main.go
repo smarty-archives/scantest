@@ -81,6 +81,7 @@ type Runner struct {
 }
 
 func (this *Runner) Run() {
+	fmt.Fprintf(os.Stdout, clearScreen)
 	message := fmt.Sprintln(" Executing:", strings.Join(this.command, " "))
 	fmt.Fprintln(os.Stdout, "\n"+strings.Repeat("=", len(message)))
 	fmt.Fprint(os.Stdout, message)
@@ -155,7 +156,8 @@ func Round(d, r time.Duration) time.Duration {
 ////////////////////////////////////////////////////////////////////////////
 
 var (
-	greenColor = "\033[32m"
-	redColor   = "\033[31m"
-	resetColor = "\033[0m"
+	clearScreen = "\033[2J\033[H" // clear the screen and put the cursor at top-left
+	greenColor  = "\033[32m"
+	redColor    = "\033[31m"
+	resetColor  = "\033[0m"
 )
