@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"time"
 
@@ -14,7 +15,7 @@ import (
 )
 
 func main() {
-	command := flag.String("command", "make", "The command (with arguments) to run when a .go file is saved.")
+	command := flag.String("command", deriveDefaultCommand(), "The command (with arguments) to run when a .go file is saved.")
 	flag.Parse()
 
 	working, err := os.Getwd()
@@ -35,9 +36,42 @@ func main() {
 	runner := &Runner{working: working, command: args}
 	for {
 		if scanner.Scan() {
+			fmt.Print(".") // TODO: remove this line when I've figured out the stdout buffering 'problem'
 			runner.Run()
 		}
 	}
+}
+
+// deriveDefaultCommand determines what the present as the default value of the
+// command flag, in case the user does not provide one. It first looks for a
+// Makefile in the current directory. If that doesn't exist it looks for the
+// Makefile provided by this project, which serves as a working generic example
+// that should fit a variety of use cases. If that doesn't exist for whatever
+// reason (say, if the scantest binary wasn't built from source on the current
+// machine) then it defaults to 'go test'.
+func deriveDefaultCommand() string {
+	var defaultCommand string
+
+	if current, err := os.Getwd(); err == nil {
+		if _, err := os.Stat(filepath.Join(current, "Makefile")); err == nil {
+			defaultCommand = "make"
+		}
+	}
+
+	if defaultCommand == "" {
+		if _, file, _, ok := runtime.Caller(0); ok {
+			backupMakefile := filepath.Join(filepath.Dir(file), "Makefile")
+			if _, err := os.Stat(backupMakefile); err == nil {
+				defaultCommand = backupMakefile
+			}
+		}
+	}
+
+	if defaultCommand == "" {
+		defaultCommand = "go test"
+	}
+
+	return defaultCommand
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -81,7 +115,7 @@ type Runner struct {
 }
 
 func (this *Runner) Run() {
-	fmt.Fprintf(os.Stdout, clearScreen)
+	// fmt.Fprintf(os.Stdout, clearScreen) // TODO: uncomment this when I've figured out the stdout buffering 'problem'.
 	message := fmt.Sprintln(" Executing:", strings.Join(this.command, " "))
 	fmt.Fprintln(os.Stdout, "\n"+strings.Repeat("=", len(message)))
 	fmt.Fprint(os.Stdout, message)
