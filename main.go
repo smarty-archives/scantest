@@ -36,7 +36,6 @@ func main() {
 	runner := &Runner{working: working, command: args}
 	for {
 		if scanner.Scan() {
-			fmt.Print(".") // TODO: remove this line when I've figured out the stdout buffering 'problem'
 			runner.Run()
 		}
 	}
@@ -109,13 +108,12 @@ func (this *Scanner) checksum() int64 {
 ////////////////////////////////////////////////////////////////////////////
 
 type Runner struct {
-	command  []string
-	working  string
-	finished bool
+	command []string
+	working string
 }
 
 func (this *Runner) Run() {
-	// fmt.Fprintf(os.Stdout, clearScreen) // TODO: uncomment this when I've figured out the stdout buffering 'problem'.
+	fmt.Fprintf(os.Stdout, clearScreen)
 	message := fmt.Sprintln(" Executing:", strings.Join(this.command, " "))
 	fmt.Fprintln(os.Stdout, "\n"+strings.Repeat("=", len(message)))
 	fmt.Fprint(os.Stdout, message)
@@ -127,7 +125,7 @@ func (this *Runner) Run() {
 		fmt.Fprintf(os.Stdout, redColor)
 	}
 	fmt.Fprintln(os.Stdout)
-	os.Stdout.Write(output)
+	fmt.Fprintln(os.Stdout, string(output))
 	fmt.Fprintln(os.Stdout, strings.Repeat("-", len(message)))
 	fmt.Fprintf(os.Stdout, resetColor)
 }
@@ -139,24 +137,30 @@ func (this *Runner) run() (output []byte, success bool) {
 	}
 	command.Dir = this.working
 
-	this.finished = false
-	go this.spin()
+	until := make(chan bool, 1)
+	now := time.Now()
+	go spin(now, until)
 
 	var err error
 	output, err = command.CombinedOutput()
-	this.finished = true
+	until <- true
+	fmt.Println(Round(time.Since(now), time.Millisecond))
 	if err != nil {
 		output = append(output, []byte(err.Error())...)
 	}
 	return output, command.ProcessState.Success()
 }
 
-func (this *Runner) spin() {
-	now := time.Now()
+func spin(now time.Time, finished chan bool) {
 	time.Sleep(time.Millisecond * 500)
-	for !this.finished {
-		fmt.Println(Round(time.Since(now), time.Millisecond))
-		time.Sleep(time.Millisecond * 500)
+	for {
+		select {
+		case <-finished:
+			return
+		default:
+			fmt.Println(Round(time.Since(now), time.Millisecond))
+			time.Sleep(time.Millisecond * 500)
+		}
 	}
 }
 
