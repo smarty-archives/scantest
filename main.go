@@ -94,7 +94,7 @@ func (this *Scanner) checksum() int64 {
 			sum++
 		} else if info.Name() == "generated_by_gunit_test.go" {
 			return nil
-		} else if strings.HasSuffix(info.Name(), ".go") {
+		} else if strings.HasSuffix(info.Name(), ".go") || info.Name() == "Makefile" {
 			sum += info.Size() + info.ModTime().Unix()
 		}
 		return nil
