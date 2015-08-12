@@ -142,7 +142,6 @@ func writeln() {
 func write(a ...interface{}) {
 	fmt.Fprint(os.Stdout, a...)
 	os.Stdout.Sync()
-	// time.Sleep(time.Millisecond * 30)
 }
 
 func (this *Runner) run() (output []byte, success bool) {
