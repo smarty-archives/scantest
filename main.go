@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/mdwhatcott/spin"
 	"github.com/smartystreets/scantest/go-shlex"
 )
 
@@ -113,21 +114,35 @@ type Runner struct {
 }
 
 func (this *Runner) Run() {
-	fmt.Fprintf(os.Stdout, clearScreen)
 	message := fmt.Sprintln(" Executing:", strings.Join(this.command, " "))
-	fmt.Fprintln(os.Stdout, "\n"+strings.Repeat("=", len(message)))
-	fmt.Fprint(os.Stdout, message)
-	fmt.Fprintln(os.Stdout, strings.Repeat("=", len(message)))
+
+	write(clearScreen)
+	writeln()
+	write(strings.Repeat("=", len(message)))
+	writeln()
+	write(message)
+	write(strings.Repeat("=", len(message)))
+	writeln()
 	output, success := this.run()
 	if success {
-		fmt.Fprintf(os.Stdout, greenColor)
+		write(greenColor)
 	} else {
-		fmt.Fprintf(os.Stdout, redColor)
+		write(redColor)
 	}
-	fmt.Fprintln(os.Stdout)
-	fmt.Fprintln(os.Stdout, string(output))
-	fmt.Fprintln(os.Stdout, strings.Repeat("-", len(message)))
-	fmt.Fprintf(os.Stdout, resetColor)
+	write(string(output))
+	writeln()
+	write(strings.Repeat("-", len(message)))
+	writeln()
+	write(resetColor)
+}
+
+func writeln() {
+	write("\n")
+}
+func write(a ...interface{}) {
+	fmt.Fprint(os.Stdout, a...)
+	os.Stdout.Sync()
+	// time.Sleep(time.Millisecond * 30)
 }
 
 func (this *Runner) run() (output []byte, success bool) {
@@ -137,31 +152,18 @@ func (this *Runner) run() (output []byte, success bool) {
 	}
 	command.Dir = this.working
 
-	until := make(chan bool, 1)
 	now := time.Now()
-	go spin(now, until)
+	spin.GoStart()
 
 	var err error
 	output, err = command.CombinedOutput()
-	until <- true
+	spin.Stop()
+	fmt.Print("\r")
 	fmt.Println(Round(time.Since(now), time.Millisecond))
 	if err != nil {
 		output = append(output, []byte(err.Error())...)
 	}
 	return output, command.ProcessState.Success()
-}
-
-func spin(now time.Time, finished chan bool) {
-	time.Sleep(time.Millisecond * 500)
-	for {
-		select {
-		case <-finished:
-			return
-		default:
-			fmt.Println(Round(time.Since(now), time.Millisecond))
-			time.Sleep(time.Millisecond * 500)
-		}
-	}
 }
 
 // GoLang-Nuts thread:
