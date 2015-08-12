@@ -21,8 +21,7 @@ func main() {
 
 	working, err := os.Getwd()
 	if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		log.Fatal(err)
 	}
 
 	args, err := shlex.Split(*command)
