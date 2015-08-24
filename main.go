@@ -146,7 +146,7 @@ func write(a ...interface{}) {
 func (this *Runner) run() (output []byte, success bool) {
 	command := exec.Command(this.command[0])
 	if len(this.command) > 1 {
-		command.Args = this.command[1:]
+		command.Args = append(command.Args, this.command[1:]...)
 	}
 	command.Dir = this.working
 
