@@ -41,7 +41,7 @@ func main() {
 	}
 }
 
-// deriveDefaultCommand determines what the present as the default value of the
+// deriveDefaultCommand determines what to present as the default value of the
 // command flag, in case the user does not provide one. It first looks for a
 // Makefile in the current directory. If that doesn't exist it looks for the
 // Makefile provided by this project, which serves as a working generic example
@@ -172,23 +172,23 @@ func (this *Runner) run() (output []byte, success bool) {
 //     https://groups.google.com/d/msg/golang-nuts/OWHmTBu16nA/wnrz0tNXzngJ
 // Answer implementation on the Go Playground:
 //     http://play.golang.org/p/QHocTHl8iR
-func Round(d, r time.Duration) time.Duration {
-	if r <= 0 {
-		return d
+func Round(duration, precision time.Duration) time.Duration {
+	if precision <= 0 {
+		return duration
 	}
-	neg := d < 0
-	if neg {
-		d = -d
+	negative := duration < 0
+	if negative {
+		duration = -duration
 	}
-	if m := d % r; m+m < r {
-		d = d - m
+	if m := duration % precision; m+m < precision {
+		duration = duration - m
 	} else {
-		d = d + r - m
+		duration = duration + precision - m
 	}
-	if neg {
-		return -d
+	if negative {
+		return -duration
 	}
-	return d
+	return duration
 }
 
 ////////////////////////////////////////////////////////////////////////////
