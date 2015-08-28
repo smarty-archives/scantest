@@ -22,6 +22,17 @@ scantest
 
 Results of your tests will display in the terminal until you enter `<ctrl>+c`.
 
+## Can I run it in the browser?
+
+Yes, with [gotty](https://github.com/yudai/gotty):
+
+```
+$ gotty scantest
+```
+
+Open a web browser to http://localhost:8080 to see the auto-updating results.
+
+
 ## Custom Go Test Arguments
 
 Simple supply a Makefile in the current directory and specify what command and arguments to run. Then just run scantest (it will find your makefile and run the default action, which you can change whenever necessary).
