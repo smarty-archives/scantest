@@ -84,6 +84,7 @@ func (this *Scanner) Scan() bool {
 	time.Sleep(time.Millisecond * 250)
 	newState := this.checksum()
 	defer func() { this.state = newState }()
+	write(".")
 	return newState != this.state
 }
 
@@ -115,7 +116,7 @@ type Runner struct {
 func (this *Runner) Run() {
 	message := fmt.Sprintln(" Executing:", strings.Join(this.command, " "))
 
-	write(clearScreen)
+	// write(clearScreen)
 	writeln()
 	write(strings.Repeat("=", len(message)))
 	writeln()
@@ -151,12 +152,12 @@ func (this *Runner) run() (output []byte, success bool) {
 	command.Dir = this.working
 
 	now := time.Now()
-	spin.GoStart()
+	spinner := spin.New(spin.StyleLine, time.Millisecond*100)
+	spinner.GoStart()
 
 	var err error
 	output, err = command.CombinedOutput()
-	spin.Stop()
-	fmt.Print("\r")
+	spinner.Stop()
 	fmt.Println(Round(time.Since(now), time.Millisecond))
 	if err != nil {
 		output = append(output, []byte(err.Error())...)
