@@ -116,7 +116,7 @@ type Runner struct {
 func (this *Runner) Run() {
 	message := fmt.Sprintln(" Executing:", strings.Join(this.command, " "))
 
-	// write(clearScreen)
+	write(clearScreen)
 	writeln()
 	write(strings.Repeat("=", len(message)))
 	writeln()
