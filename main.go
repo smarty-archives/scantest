@@ -33,7 +33,7 @@ func main() {
 	}
 
 	scanner := &Scanner{working: working}
-	runner := NewRunner(working, args)
+	runner := &Runner{working: working, command: args}
 	for {
 		if scanner.Scan() {
 			runner.Run()
@@ -84,6 +84,7 @@ func (this *Scanner) Scan() bool {
 	time.Sleep(time.Millisecond * 250)
 	newState := this.checksum()
 	defer func() { this.state = newState }()
+	write(".")
 	return newState != this.state
 }
 
@@ -110,19 +111,9 @@ func (this *Scanner) checksum() int64 {
 type Runner struct {
 	command []string
 	working string
-	spinner *spin.Spinner
-}
-
-func NewRunner(working string, args []string) *Runner {
-	spinner := spin.New(spin.StyleBrackets, time.Millisecond*100)
-	spinner.GoStart()
-	return &Runner{working: working, command: args, spinner: spinner}
 }
 
 func (this *Runner) Run() {
-	this.spinner.Stop()
-	defer this.spinner.GoStart()
-
 	message := fmt.Sprintln(" Executing:", strings.Join(this.command, " "))
 
 	write(clearScreen)
