@@ -153,7 +153,7 @@ func (this *Runner) run() (output []byte, success bool) {
 
 	now := time.Now()
 	spinner := spin.New(spin.StyleLine, time.Millisecond*100)
-	spinner.GoStart()
+	go spinner.Start()
 
 	var err error
 	output, err = command.CombinedOutput()
