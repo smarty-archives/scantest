@@ -53,11 +53,11 @@ func goGenerate() {
 }
 
 func generate(path string) {
-	pkg := packageName(path)
-	log.Println("Running go generate for:", pkg)
-	output, err := exec.Command("go", "generate", pkg).CombinedOutput()
+	name := packageName(path)
+	log.Println("Running go generate for:", name)
+	output, err := exec.Command("go", "generate", name).CombinedOutput()
 	if err != nil {
-		log.Printf("[ERROR] go generate %s:\n%s\n", pkg, string(output))
+		log.Printf("[ERROR] go generate %s:\n%s\n", name, string(output))
 	}
 	waiter.Done()
 }
