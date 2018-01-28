@@ -10,8 +10,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 	"sync"
+	"time"
 )
 
 func main() {
